@@ -10,9 +10,11 @@ macOS 10.15+
 
 Add Coquille to your project using Xcode (File > Add Packages...) or by adding it to your project's `Package.swift` file:
 
+```swift
 dependencies: [
   .package(url: "https://github.com/alexrozanski/Coquille.git", from: "0.1.0")
 ]
+```
 
 ## Usage
 
