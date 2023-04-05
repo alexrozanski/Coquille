@@ -1,4 +1,4 @@
-# Coquille
+# 🐚 Coquille
 
 A simple Swift wrapper around `Process` supporting Swift Concurrency and streamed output from `stdout` and `stderr`.
 
