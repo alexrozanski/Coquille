@@ -30,10 +30,10 @@ public class Process {
     }
 
     public struct Command {
-        let name: String
-        let arguments: [String]
+        public let name: String
+        public let arguments: [String]
 
-        init(_ name: String, arguments: [String]) {
+        public init(_ name: String, arguments: [String]) {
             self.name = name
             self.arguments = arguments
         }
