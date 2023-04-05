@@ -1,5 +1,8 @@
 # 🐚 Coquille
 
+[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Falexrozanski%2FCoquille%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/alexrozanski/Coquille)
+[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Falexrozanski%2FCoquille%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/alexrozanski/Coquille)
+
 A simple Swift wrapper around `Process` supporting Swift Concurrency and streamed output from `stdout` and `stderr`.
 
 ## Requirements
