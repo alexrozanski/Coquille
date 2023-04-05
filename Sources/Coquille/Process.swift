@@ -7,26 +7,26 @@ public class Process {
         case success
         case failure(_ code: Int32)
 
-        var isSuccess: Bool {
+        public var isSuccess: Bool {
             switch self {
             case .success: return true
             case .failure: return false
             }
         }
 
-        var isFailure: Bool {
+        public var isFailure: Bool {
             switch self {
             case .success: return false
             case .failure: return true
             }
         }
 
-      var errorCode: Int32? {
-        switch self {
-        case .success: return nil
-        case .failure(let errorCode): return errorCode
+        public var errorCode: Int32? {
+            switch self {
+            case .success: return nil
+            case .failure(let errorCode): return errorCode
+            }
         }
-      }
     }
 
     public struct Command {
@@ -47,8 +47,8 @@ public class Process {
 
     let arguments: [String]
 
-    let stdout: Output?
-    let stderr: Output?
+    public let stdout: Output?
+    public let stderr: Output?
 
     // MARK: - Initializers
 
@@ -89,7 +89,6 @@ public class Process {
         self.stdout = printStdout ? .stdout : nil
         self.stderr = printStderr ? .stderr : nil
     }
-
 
     public init(commandString: String, stdout: OutputHandler? = nil) {
         self.arguments = commandString.components(separatedBy: " ")
