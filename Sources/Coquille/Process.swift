@@ -1,5 +1,9 @@
 import Foundation
 
+public protocol ProcessCancellationHandle {
+    func cancel()
+}
+
 public class Process {
     public typealias OutputHandler = (String) -> Void
 
@@ -102,6 +106,17 @@ public class Process {
         self.stderr = stderr.map { .handler($0) }
     }
 
+    private class CancellationHandle: ProcessCancellationHandle {
+        let cancellationHandler: () -> Void
+        init(cancellationHandler: @escaping () -> Void) {
+            self.cancellationHandler = cancellationHandler
+        }
+
+        func cancel() {
+            cancellationHandler()
+        }
+    }
+
     // MARK: - Running tasks
 
     public func run() async throws -> Status {
@@ -116,7 +131,17 @@ public class Process {
         }
     }
 
-    private func _run(with completionHandler: (Status) -> Void) throws {
+    @discardableResult public func run(with completionHandler: @escaping ((Status) -> Void)) -> ProcessCancellationHandle {
+        let _completionHandler = makeSingleShot(completionHandler)
+        do {
+            return try _run(with: _completionHandler)
+        } catch {
+            _completionHandler(.failure(1))
+            return CancellationHandle(cancellationHandler: {})
+        }
+    }
+
+    @discardableResult private func _run(with completionHandler: @escaping (Status) -> Void) throws -> ProcessCancellationHandle {
         let _process = Foundation.Process()
         _process.launchPath = "/usr/bin/env"
         _process.arguments = arguments
@@ -129,20 +154,53 @@ public class Process {
         stdoutPipe.output(to: stdout)
         stderrPipe.output(to: stderr)
 
-        try _process.run()
-        _process.waitUntilExit()
+        var isCancelled = false
+        let cancellationHandle = CancellationHandle(cancellationHandler: {
+            if _process.isRunning {
+                _process.interrupt()
+            } else {
+                isCancelled = true
+            }
+        })
 
-        let exitStatus = _process.terminationStatus
-        if exitStatus == 0 {
-            completionHandler(.success)
-        } else {
-            completionHandler(.failure(exitStatus))
+        let _completionHandler = makeSingleShot(completionHandler)
+        DispatchQueue.global(qos: .default).async {
+            do {
+                if isCancelled {
+                    _completionHandler(.failure(1))
+                    return
+                }
+
+                try _process.run()
+                _process.waitUntilExit()
+
+                let exitStatus = _process.terminationStatus
+                if exitStatus == 0 {
+                    _completionHandler(.success)
+                } else {
+                    _completionHandler(.failure(exitStatus))
+                }
+            } catch {
+                _completionHandler(.failure(1))
+            }
+        }
+        return cancellationHandle
+    }
+}
+
+// Ensures completion handler is not called multiple times.
+private func makeSingleShot(_ completionHandler: @escaping (Process.Status) -> Void) -> ((Process.Status) -> Void) {
+    var completed = false
+    return { status in
+        if (!completed) {
+            completionHandler(status)
+            completed = true
         }
     }
 }
 
 extension Pipe {
-    fileprivate func output(to output: Coquille.Process.Output?) {
+    fileprivate func output(to output: Process.Output?) {
         guard let output else { return }
 
         fileHandleForReading.readabilityHandler = { pipe in
