@@ -37,12 +37,12 @@ _ = try await process.run()
 
 ### I/O
 
-By default `Process` pipes output from the spawned process to `stdout` and `stderr`. This can be configured with `printStdout` and `printStderr`:
+By default `Process` does not pipe any output from the spawned process to `stdout` and `stderr`. This can be configured with `printStdout` and `printStderr`:
 
 ```swift
 import Coquille
 
-let process = Process(commandString: "brew install wget", printStderr: false))
+let process = Process(commandString: "brew install wget", printStdout: true))
 _ = try await process.run() // Pipes standard output to `stdout` but will not pipe error output to `stderr`
 ```
 
