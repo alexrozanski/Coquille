@@ -58,11 +58,11 @@ public class Process {
 
     public init(command: Command) {
         self.arguments = [command.name] + command.arguments
-        self.stdout = .stdout
-        self.stderr = .stderr
+        self.stdout = nil
+        self.stderr = nil
     }
 
-    public init(command: Command, printStdout: Bool = true, printStderr: Bool = true) {
+    public init(command: Command, printStdout: Bool = false, printStderr: Bool = false) {
         self.arguments = [command.name] + command.arguments
         self.stdout = printStdout ? .stdout : nil
         self.stderr = printStderr ? .stderr : nil
@@ -84,11 +84,11 @@ public class Process {
 
     public init(commandString: String) {
         self.arguments = commandString.components(separatedBy: " ")
-        self.stdout = .stdout
-        self.stderr = .stderr
+        self.stdout = nil
+        self.stderr = nil
     }
 
-    public init(commandString: String, printStdout: Bool = true, printStderr: Bool = true) {
+    public init(commandString: String, printStdout: Bool = false, printStderr: Bool = false) {
         self.arguments = commandString.components(separatedBy: " ")
         self.stdout = printStdout ? .stdout : nil
         self.stderr = printStderr ? .stderr : nil
@@ -119,7 +119,7 @@ public class Process {
 
     // MARK: - Running tasks
 
-    public func run() async throws -> Status {
+    @discardableResult public func run() async throws -> Status {
         return try await withCheckedThrowingContinuation { continuation in
             do {
                 try _run { status in

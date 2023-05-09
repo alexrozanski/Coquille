@@ -15,11 +15,13 @@ final class CoquilleTests: XCTestCase {
 
     func testDefaultStdoutParameter() async throws {
         let expectation = expectation(
-            description: "Stdout handler should be called with correct output")
+            description: "Stdout handler should not be called as stdout output is ignored by default")
         expectation.assertForOverFulfill = false
+        expectation.isInverted = true
 
         // Redirect stdout
         let pipe = Pipe()
+        let dupFd = dup(fileno(stdout))
         dup2(pipe.fileHandleForWriting.fileDescriptor, fileno(stdout))
         let queue = DispatchQueue.global(qos: .utility)
         let source = DispatchSource.makeReadSource(
@@ -36,7 +38,8 @@ final class CoquilleTests: XCTestCase {
         _ = try await process.run()
 
         // Tear down
-        freopen("/dev/stdout", "a", stdout)
+        fflush(stdout)
+        dup2(dupFd, fileno(stdout))
         try? pipe.fileHandleForWriting.close()
 
         await waitForExpectations(timeout: 5.0)
@@ -50,6 +53,7 @@ final class CoquilleTests: XCTestCase {
 
         // Redirect stdout
         let pipe = Pipe()
+        let dupFd = dup(fileno(stderr))
         dup2(pipe.fileHandleForWriting.fileDescriptor, fileno(stderr))
         let queue = DispatchQueue.global(qos: .utility)
         let source = DispatchSource.makeReadSource(
@@ -65,10 +69,44 @@ final class CoquilleTests: XCTestCase {
         _ = try await process.run()
 
         // Tear down
-        freopen("/dev/stderr", "a", stderr)
+        fflush(stderr)
+        dup2(dupFd, fileno(stderr))
         try? pipe.fileHandleForWriting.close()
 
         await waitForExpectations(timeout: 0.5)
+    }
+
+    func testPrintToStdout() async throws {
+        let expectation = expectation(
+            description: "Stdout handler should be called")
+        expectation.assertForOverFulfill = false
+
+        // Redirect stdout
+        let pipe = Pipe()
+        let dupFd = dup(fileno(stdout))
+        dup2(pipe.fileHandleForWriting.fileDescriptor, fileno(stdout))
+        let queue = DispatchQueue.global(qos: .utility)
+        let source = DispatchSource.makeReadSource(
+            fileDescriptor: pipe.fileHandleForReading.fileDescriptor, queue: queue)
+        source.setEventHandler {
+            if !pipe.fileHandleForReading.availableData.isEmpty { expectation.fulfill() }
+        }
+        source.resume()
+
+        // Test
+        let process = Process(
+            command: Process.Command("echo", arguments: ["Hello, World!"]),
+            printStdout: true
+        )
+
+        _ = try await process.run()
+
+        // Tear down
+        fflush(stdout)
+        dup2(dupFd, fileno(stdout))
+        try? pipe.fileHandleForWriting.close()
+
+        await waitForExpectations(timeout: 5.0)
     }
 
     func testPrintToStderr() async throws {
@@ -78,6 +116,7 @@ final class CoquilleTests: XCTestCase {
 
         // Redirect stdout
         let pipe = Pipe()
+        let dupFd = dup(fileno(stderr))
         dup2(pipe.fileHandleForWriting.fileDescriptor, fileno(stderr))
         let queue = DispatchQueue.global(qos: .utility)
         let source = DispatchSource.makeReadSource(
@@ -87,12 +126,13 @@ final class CoquilleTests: XCTestCase {
         }
         source.resume()
 
-        let process = Process(commandString: "invalid-command")
+        let process = Process(commandString: "invalid-command", printStderr: true)
 
         _ = try await process.run()
 
         // Tear down
-        freopen("/dev/stderr", "a", stderr)
+        fflush(stderr)
+        dup2(dupFd, fileno(stderr))
         try? pipe.fileHandleForWriting.close()
 
         await waitForExpectations(timeout: 0.5)
