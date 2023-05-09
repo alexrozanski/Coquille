@@ -15,7 +15,7 @@ Add Coquille to your project using Xcode (File > Add Packages...) or by adding i
 
 ```swift
 dependencies: [
-  .package(url: "https://github.com/alexrozanski/Coquille.git", from: "0.1.0")
+  .package(url: "https://github.com/alexrozanski/Coquille.git", from: "0.3.0")
 ]
 ```
 
@@ -78,6 +78,22 @@ if let errorCode = (try await Process(commandString: "swift build").run()).error
   }
 }
 ```
+
+### Cancellation
+
+The main `Process.run()` function signature is:
+
+```swift
+public func run() async throws -> Status
+```
+    
+which allows you use Swift Concurrency to execute the subprocess and `await` the exit status. However if you want to support cancellation you can use the other `run()` function:
+
+```swift
+public func run(with completionHandler: @escaping ((Status) -> Void)) -> ProcessCancellationHandle
+```
+    
+This immediately returns an opaque `ProcessCancellationHandle` type which you can call `cancel()` on, should you wish to cancel execution, and the process status is delivered through a `completionHandler` closure.
 
 ## Acknowledgements
 
